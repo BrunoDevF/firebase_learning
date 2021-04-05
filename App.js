@@ -1,50 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, Button } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Button, FlatList, ActivityIndicator } from 'react-native';
 
 import firebase from './src/firebaseConnection';
-
+import Listagem from './src/Listagem';
 export default function App() {
 
   
   const [nome,setNome] = useState('');
   const [cargo,setCargo] = useState('');
+  const [usuarios,setUsuarios] = useState([]);
+  const [loading,setLoading] = useState(true);
 
   useEffect( ()=> {
     async function dados(){
-      //Criando novo Nó
-      //await firebase.database().ref('tipo').set('Cliente');
+      await firebase.database().ref('usuarios').on('value', (snapshot) => {
+        setUsuarios([]);
+        
+        snapshot.forEach((itemChild)=>{
+          let data ={
+            key: itemChild.key,
+            nome: itemChild.val().nome,
+            cargo: itemChild.val().cargo
+          };
+          
+          setUsuarios(oldArray => [...oldArray, data].reverse());
 
-      //Removendo um nó
-      //await firebase.database().ref('tipo').remove();
-
-      //Inserir novo valor
-      //OBS:. caso omita algum valor o banco vai excluir os outros valores, ou seja
-      //se no banco tiver um child com dois valores(nome,cargo) e eu passar apenas cargo, ele vai atualizar
-      //o cargo e excluir o nome. Entao deve ter muito cuidado para usar mas tem um solução pra isso logo abaixo
-      //PARA INSERIR UM NOVO VALOR USA ESSE METODO
-      // await firebase.database().ref('usuarios').child(3).set({
-      //   nome: 'Zé',
-      //   cargo: 'Dev Java'
-      // });
-      //Para atualizar algum valor na nossa database
-      // await firebase.database().ref('usuarios').child(3).update({
-      //   nome : 'Augustinho carrara'
-      // });
-
-      /*** Usando nossa database ***/
-      //On -> olheiro da nossa database
-      // await firebase.database().ref('usuarios/2').on('value', (snapshot) => {
-      //   setNome(snapshot.val().nome);
-      //   setIdade(snapshot.val().idade);
-      // });
-
-      //Once -> busca apenas uma vez na tela
-      // await firebase.database().ref('nome').once('value', (snapshot)=>{
-      //   setNome(snapshot.val());
-      // });
+        })
+        setLoading(false);
+      });
     }
+
     dados();
   }, []);
+
   async function cadastrar(){
     if(nome !== '' && cargo !== ''){
       let usuarios = await firebase.database().ref('usuarios');
@@ -58,8 +46,9 @@ export default function App() {
       setCargo('');
       setNome('');
     }
-    
   }
+
+
   return (
     <View style={styles.container}>
       <Text style={styles.texto}>Nome</Text>
@@ -81,6 +70,19 @@ export default function App() {
         title="Cadastrar novo funcionario"
         onPress={cadastrar}
       />
+    {loading ? 
+    (
+      <ActivityIndicator color="#121212" size={45} />
+    ) : 
+    (
+      <FlatList 
+        keyExtractor={ item => item.key }
+        data={ usuarios }
+        renderItem={ ({ item }) => <Listagem data={ item } /> }
+      />
+    )
+    }
+      
     </View>
   );
 }
