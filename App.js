@@ -8,6 +8,7 @@ import firebase from './src/firebaseConnection';
 export default function App() {
 
   const [email,setEmail] = useState('');
+  const [nome,setNome] = useState('');
   const [password,setPassword] = useState('');
 
   useEffect( ()=> {
@@ -15,30 +16,56 @@ export default function App() {
   }, []);
 
   async function cadastrar(){
-    await firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then( ( value ) => {
-      alert('usuario criado com sucesso '+ value.user.email);
-    } )
-    .catch ( (error)=> {
-      if(error.code === 'auth/weak-password'){
-        alert('Senha deve ter pelo menos 6 caracteres');
-        return;
-      }
-      if(error.code === 'auth/invalid-email'){
-        alert('O email que você está tentando é invalido!');
-        return;
-      }else {
-        alert('Ops! Algo deu errado');
-        return;
-      }
+    // **** CRIAR CONTA
+    // await firebase.auth().createUserWithEmailAndPassword(email, password)
+    // .then( ( value ) => {
+    //   alert('usuario criado com sucesso '+ value.user.email);
+    // } )
+
+    // lOGAR
+    // await firebase.auth().signInWithEmailAndPassword(email, password)
+    // .then( ( value ) => {
+    //   alert('Login feito com sucesso: '+ value.user.email);
+    //   setUser(value.user.email);
+    // } )
+    // .catch ( (error)=> {
+    //   alert('Ops! Algo deu errado');
+    //   return;
+    // });
+    // setPassword('');
+    // setEmail('');
+
+    await firebase.auth().createUserWithEmailAndPassword(email,password)
+    .then( (value)=>{
+      firebase.database().ref('usuarios').child(value.user.uid).set({
+        nome: nome
+      });
+      alert('Usuario cadastrado com sucesso!');
     })
-    setPassword('');
+    .catch((error)=>{
+      alert('Algo deu errado');
+    })
+    setNome('');
     setEmail('');
+    setPassword('');
   }
 
+  async function loggout(){
+    await firebase.auth().signOut();
+    setUser('');
+    alert('Deslogado com sucesso!!!');
+  }
 
   return (
     <View style={styles.container}>
+      <Text style={styles.texto}>Nome</Text>
+      <TextInput
+        style={styles.textoInput}
+        underlineColorAndroid="transparent"
+        onChangeText={ (value) => setNome(value) }
+        value={nome}
+      />
+
       <Text style={styles.texto}>Email</Text>
       <TextInput
         style={styles.textoInput}
@@ -58,7 +85,25 @@ export default function App() {
         title="Cadastrar"
         onPress={cadastrar}
       />
-    
+
+      {/* <Text style={{ marginTop: 20,marginBottom: 20,fontSize: 23, textAlign: 'center' }}>
+        {user}
+      </Text> */}
+
+    {/* condicional para exibir botao de loggour */}
+
+    {/* {(user.legnth > 0) ? 
+    (
+        
+        <Button 
+          title="Sair"
+          onPress={loggout}
+        />
+    ) : (
+      <Text style={{ marginTop: 20,marginBottom: 20,fontSize: 23, textAlign: 'center' }}>Nenhum usuario logado</Text>
+    )} */}
+      
+
     </View>
   );
 }
